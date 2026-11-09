@@ -19,6 +19,8 @@ class AccountRepositoryTest {
         Path legacyDatabase = temporaryDirectory.resolve("legacy").resolve("ftp-manager.db");
         Files.createDirectories(legacyDatabase.getParent());
         Path existingHome = temporaryDirectory.resolve("legacy-users").resolve("old_user");
+        Files.createDirectories(existingHome);
+        Files.writeString(existingHome.resolve("legacy.txt"), "preserve existing file");
         try (var connection = DriverManager.getConnection("jdbc:sqlite:" + legacyDatabase);
              var statement = connection.createStatement()) {
             statement.execute("""
@@ -40,10 +42,13 @@ class AccountRepositoryTest {
         AccountRepository repository = new AccountRepository(visibleDirectory, legacyDatabase, storageDirectory);
 
         assertEquals(1, repository.count());
-        assertEquals(existingHome, repository.find("old_user").homeDirectory());
+        assertEquals(storageDirectory, repository.find("old_user").homeDirectory());
+        assertEquals("preserve existing file", Files.readString(
+            storageDirectory.resolve("old_user").resolve("legacy.txt")));
 
         repository.create("new_user", "StrongPass123".toCharArray());
         assertTrue(Files.isRegularFile(visibleDirectory.resolve("ftp-manager.db")));
         assertEquals(2, repository.count());
+        assertEquals(storageDirectory, repository.find("new_user").homeDirectory());
     }
 }

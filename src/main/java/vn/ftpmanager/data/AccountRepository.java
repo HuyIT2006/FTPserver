@@ -5,6 +5,8 @@ import javax.crypto.spec.PBEKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.LinkOption;
+import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.sql.Connection;
@@ -15,6 +17,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.stream.Stream;
 
 public final class AccountRepository {
     private static final int ITERATIONS = 210_000;
@@ -25,17 +28,15 @@ public final class AccountRepository {
     private final Path storagePath;
 
     public AccountRepository(Path applicationDirectory) throws SQLException, java.io.IOException {
-        this(applicationDirectory,
-                Path.of(System.getProperty("user.home"), ".ftp-manager", "ftp-manager.db"));
+        this(applicationDirectory, null, applicationDirectory.resolve("shared"));
     }
 
     public AccountRepository(Path applicationDirectory, Path legacyDatabasePath)
             throws SQLException, java.io.IOException {
-        this(applicationDirectory, legacyDatabasePath,
-            Path.of(System.getProperty("user.home"), ".ftp-manager", "users"));
-        }
+        this(applicationDirectory, legacyDatabasePath, applicationDirectory.resolve("shared"));
+    }
 
-        public AccountRepository(Path applicationDirectory, Path legacyDatabasePath, Path storagePath)
+    public AccountRepository(Path applicationDirectory, Path legacyDatabasePath, Path storagePath)
             throws SQLException, java.io.IOException {
         Files.createDirectories(applicationDirectory);
         databasePath = applicationDirectory.resolve("ftp-manager.db");
@@ -45,7 +46,13 @@ public final class AccountRepository {
         initialize();
         if (!databaseAlreadyExisted) {
             migrateLegacyDatabase(legacyDatabasePath);
+        } else {
+            migrateExistingAccountHomes();
         }
+    }
+
+    public Path getSharedStoragePath() {
+        return storagePath;
     }
 
     private Connection connect() throws SQLException {
@@ -68,8 +75,9 @@ public final class AccountRepository {
         }
     }
 
-    private void migrateLegacyDatabase(Path legacyDatabasePath) throws SQLException {
-        if (legacyDatabasePath.equals(databasePath) || !Files.isRegularFile(legacyDatabasePath)) {
+    private void migrateLegacyDatabase(Path legacyDatabasePath) throws SQLException, java.io.IOException {
+        if (legacyDatabasePath == null || legacyDatabasePath.equals(databasePath)
+                || !Files.isRegularFile(legacyDatabasePath)) {
             return;
         }
         try (Connection legacy = DriverManager.getConnection("jdbc:sqlite:" + legacyDatabasePath);
@@ -79,20 +87,34 @@ public final class AccountRepository {
             if (!table.next()) {
                 return;
             }
+            List<LegacyAccount> accounts = new ArrayList<>();
             try (PreparedStatement readAccounts = legacy.prepareStatement(
                     "SELECT username, password_salt, password_hash, home_directory, enabled, created_at " +
                             "FROM ftp_accounts");
-                 ResultSet accounts = readAccounts.executeQuery();
-                 Connection target = connect();
+                 ResultSet results = readAccounts.executeQuery()) {
+                while (results.next()) {
+                    accounts.add(new LegacyAccount(results.getString("username"),
+                            results.getString("password_salt"), results.getString("password_hash"),
+                            Path.of(results.getString("home_directory")), results.getInt("enabled"),
+                            results.getString("created_at")));
+                }
+            }
+            for (LegacyAccount account : accounts) {
+                copyLegacyFiles(account.username(), account.homeDirectory());
+            }
+            try (Connection target = connect();
                  PreparedStatement insertAccount = target.prepareStatement(
                          "INSERT INTO ftp_accounts(username, password_salt, password_hash, home_directory, enabled, created_at) " +
                                  "VALUES (?, ?, ?, ?, ?, ?)")) {
                 target.setAutoCommit(false);
                 try {
-                    while (accounts.next()) {
-                        for (int column = 1; column <= 6; column++) {
-                            insertAccount.setObject(column, accounts.getObject(column));
-                        }
+                    for (LegacyAccount account : accounts) {
+                        insertAccount.setString(1, account.username());
+                        insertAccount.setString(2, account.passwordSalt());
+                        insertAccount.setString(3, account.passwordHash());
+                        insertAccount.setString(4, storagePath.toString());
+                        insertAccount.setInt(5, account.enabled());
+                        insertAccount.setString(6, account.createdAt());
                         insertAccount.addBatch();
                     }
                     insertAccount.executeBatch();
@@ -100,6 +122,52 @@ public final class AccountRepository {
                 } catch (SQLException exception) {
                     target.rollback();
                     throw exception;
+                }
+            }
+        }
+    }
+
+    private void migrateExistingAccountHomes() throws SQLException, java.io.IOException {
+        List<FtpAccount> accounts = findAll();
+        for (FtpAccount account : accounts) {
+            Path previousHome = account.homeDirectory().toAbsolutePath().normalize();
+            if (!previousHome.equals(storagePath.toAbsolutePath().normalize())) {
+                copyLegacyFiles(account.username(), previousHome);
+                try (Connection connection = connect();
+                     PreparedStatement statement = connection.prepareStatement(
+                             "UPDATE ftp_accounts SET home_directory = ? WHERE username = ?")) {
+                    statement.setString(1, storagePath.toString());
+                    statement.setString(2, account.username());
+                    statement.executeUpdate();
+                }
+            }
+        }
+    }
+
+    private void copyLegacyFiles(String username, Path sourceDirectory) throws java.io.IOException {
+        if (!Files.isDirectory(sourceDirectory, LinkOption.NOFOLLOW_LINKS)) {
+            return;
+        }
+        Path destinationRoot = storagePath.resolve(username).normalize();
+        if (!destinationRoot.startsWith(storagePath) || sourceDirectory.equals(destinationRoot)) {
+            return;
+        }
+        try (Stream<Path> paths = Files.walk(sourceDirectory)) {
+            for (Path source : paths.toList()) {
+                if (source.equals(sourceDirectory) || Files.isSymbolicLink(source)) {
+                    continue;
+                }
+                Path destination = destinationRoot.resolve(sourceDirectory.relativize(source)).normalize();
+                if (!destination.startsWith(destinationRoot)) {
+                    continue;
+                }
+                if (Files.isDirectory(source, LinkOption.NOFOLLOW_LINKS)) {
+                    Files.createDirectories(destination);
+                } else if (Files.isRegularFile(source, LinkOption.NOFOLLOW_LINKS)) {
+                    Files.createDirectories(destination.getParent());
+                    if (!Files.exists(destination)) {
+                        Files.copy(source, destination, StandardCopyOption.COPY_ATTRIBUTES);
+                    }
                 }
             }
         }
@@ -167,11 +235,7 @@ public final class AccountRepository {
             throw new IllegalArgumentException("Mật khẩu cần có ít nhất 8 ký tự.");
         }
 
-        Path home = storagePath.resolve(normalized).normalize();
-        if (!home.startsWith(storagePath)) {
-            throw new IllegalArgumentException("Tên tài khoản không hợp lệ.");
-        }
-        Files.createDirectories(home);
+        Files.createDirectories(storagePath);
         byte[] salt = new byte[16];
         RANDOM.nextBytes(salt);
         try (Connection connection = connect();
@@ -180,7 +244,7 @@ public final class AccountRepository {
             statement.setString(1, normalized);
             statement.setString(2, Base64.getEncoder().encodeToString(salt));
             statement.setString(3, Base64.getEncoder().encodeToString(hash(password, salt)));
-            statement.setString(4, home.toString());
+            statement.setString(4, storagePath.toString());
             statement.executeUpdate();
         }
     }
@@ -202,5 +266,9 @@ public final class AccountRepository {
         } finally {
             keySpec.clearPassword();
         }
+    }
+
+    private record LegacyAccount(String username, String passwordSalt, String passwordHash,
+                                 Path homeDirectory, int enabled, String createdAt) {
     }
 }

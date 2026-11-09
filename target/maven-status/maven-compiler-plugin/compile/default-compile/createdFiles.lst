@@ -1,5 +1,6 @@
 vn/ftpmanager/data/AccountRepository.class
 vn/ftpmanager/FileTransferView.class
+vn/ftpmanager/data/AccountRepository$LegacyAccount.class
 vn/ftpmanager/FileTransferView$TransferJob.class
 vn/ftpmanager/ftp/FtpClientService.class
 vn/ftpmanager/ftp/FtpServerService.class

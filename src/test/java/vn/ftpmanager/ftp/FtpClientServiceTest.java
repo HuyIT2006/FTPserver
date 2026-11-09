@@ -19,6 +19,7 @@ class FtpClientServiceTest {
         AccountRepository repository = new AccountRepository(temporaryDirectory.resolve("database"));
         char[] password = "StrongPass123".toCharArray();
         repository.create("test_user", password);
+        repository.create("other_user", "AnotherPass123".toCharArray());
 
         int port;
         try (ServerSocket socket = new ServerSocket(0)) {
@@ -35,7 +36,7 @@ class FtpClientServiceTest {
         try {
             server.start(port, repository);
             firstClient.connect("127.0.0.1", port, "test_user", "StrongPass123");
-            secondClient.connect("127.0.0.1", port, "test_user", "StrongPass123");
+            secondClient.connect("127.0.0.1", port, "other_user", "AnotherPass123");
             firstClient.upload(sourceFile, "/source.txt");
             secondClient.download("/source.txt", downloadedFile);
 

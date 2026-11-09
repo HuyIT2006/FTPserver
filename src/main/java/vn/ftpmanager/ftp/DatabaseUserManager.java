@@ -89,11 +89,11 @@ public final class DatabaseUserManager implements UserManager {
         return false;
     }
 
-    private static User toFtpUser(FtpAccount account) {
+    private User toFtpUser(FtpAccount account) {
         BaseUser user = new BaseUser();
         user.setName(account.username());
         user.setEnabled(account.enabled());
-        user.setHomeDirectory(account.homeDirectory().toAbsolutePath().toString());
+        user.setHomeDirectory(repository.getSharedStoragePath().toAbsolutePath().toString());
         user.setAuthorities(List.of(new WritePermission(), new ConcurrentLoginPermission(50, 20),
                 new TransferRatePermission(0, 0)));
         return user;

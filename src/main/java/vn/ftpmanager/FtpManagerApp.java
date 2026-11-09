@@ -221,7 +221,7 @@ public final class FtpManagerApp extends Application {
     private VBox buildAccountsPanel() {
         Label title = new Label("FTP accounts");
         title.getStyleClass().add("panel-title");
-        Label caption = new Label("Each account is restricted to its own home folder.");
+        Label caption = new Label("All authenticated accounts can access the shared FTP folder.");
         caption.getStyleClass().add("panel-caption");
         Button addButton = new Button("+  Add account");
         addButton.getStyleClass().add("secondary-button");
@@ -236,9 +236,8 @@ public final class FtpManagerApp extends Application {
         TableColumn<FtpAccount, String> userColumn = new TableColumn<>("USERNAME");
         userColumn.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(
             cell.getValue().username()));
-        TableColumn<FtpAccount, String> folderColumn = new TableColumn<>("HOME FOLDER");
-        folderColumn.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(
-                cell.getValue().homeDirectory().getFileName().toString()));
+        TableColumn<FtpAccount, String> folderColumn = new TableColumn<>("STORAGE");
+        folderColumn.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty("Shared"));
         TableColumn<FtpAccount, String> accessColumn = new TableColumn<>("ACCESS");
         accessColumn.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(
                 cell.getValue().enabled() ? "Enabled" : "Disabled"));
