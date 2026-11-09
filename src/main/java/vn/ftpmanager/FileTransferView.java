@@ -105,17 +105,17 @@ public final class FileTransferView extends BorderPane {
                 labeledField("PASSWORD", passwordField),
                 connectionButton);
         fields.setAlignment(Pos.BOTTOM_LEFT);
-        fields.setPadding(new Insets(14, 20, 12, 20));
+        fields.setPadding(new Insets(7, 14, 5, 14));
         HBox.setHgrow(fields.getChildren().get(0), Priority.ALWAYS);
         hostField.setMaxWidth(Double.MAX_VALUE);
 
         connectionStatus.getStyleClass().add("connection-status");
         HBox statusRow = new HBox(connectionStatus);
         statusRow.setAlignment(Pos.CENTER_LEFT);
-        statusRow.setPadding(new Insets(0, 20, 13, 20));
+        statusRow.setPadding(new Insets(0, 14, 7, 14));
 
-        VBox panel = new VBox(8, title, fields, statusRow);
-        panel.setPadding(new Insets(16, 0, 0, 0));
+        VBox panel = new VBox(4, title, fields, statusRow);
+        panel.setPadding(new Insets(8, 0, 0, 0));
         panel.getStyleClass().add("connection-panel");
         return panel;
     }
@@ -123,7 +123,7 @@ public final class FileTransferView extends BorderPane {
     private VBox labeledField(String labelText, javafx.scene.Node input) {
         Label label = new Label(labelText);
         label.getStyleClass().add("connection-label");
-        VBox field = new VBox(6, label, input);
+        VBox field = new VBox(4, label, input);
         HBox.setHgrow(field, Priority.ALWAYS);
         return field;
     }
@@ -134,7 +134,7 @@ public final class FileTransferView extends BorderPane {
         SplitPane browsers = new SplitPane(localPanel, remotePanel);
         browsers.setDividerPositions(0.5);
         browsers.getStyleClass().add("browser-split");
-        browsers.setPadding(new Insets(12, 12, 10, 12));
+        browsers.setPadding(new Insets(7, 8, 6, 8));
         return browsers;
     }
 
@@ -159,7 +159,7 @@ public final class FileTransferView extends BorderPane {
 
         configureLocalTable();
         VBox.setVgrow(localTable, Priority.ALWAYS);
-        VBox panel = new VBox(10, titleRow, pathRow, localTable);
+        VBox panel = new VBox(7, titleRow, pathRow, localTable);
         panel.getStyleClass().add("browser-panel");
         return panel;
     }
@@ -184,7 +184,7 @@ public final class FileTransferView extends BorderPane {
 
         configureRemoteTable();
         VBox.setVgrow(remoteTable, Priority.ALWAYS);
-        VBox panel = new VBox(10, titleRow, pathRow, remoteTable);
+        VBox panel = new VBox(7, titleRow, pathRow, remoteTable);
         panel.getStyleClass().add("browser-panel");
         return panel;
     }
@@ -250,7 +250,8 @@ public final class FileTransferView extends BorderPane {
         queueTable.setItems(transferJobs);
         queueTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         queueTable.setPlaceholder(new Label("Transfers will appear here"));
-        queueTable.setPrefHeight(145);
+        queueTable.setPrefHeight(110);
+        queueTable.setMinHeight(90);
         TableColumn<TransferJob, String> file = new TableColumn<>("File");
         file.setCellValueFactory(new PropertyValueFactory<>("file"));
         TableColumn<TransferJob, String> direction = new TableColumn<>("Direction");
@@ -263,7 +264,7 @@ public final class FileTransferView extends BorderPane {
         queueTable.getStyleClass().add("file-table");
 
         VBox panel = new VBox(8, heading, queueTable);
-        panel.setPadding(new Insets(8, 20, 18, 20));
+        panel.setPadding(new Insets(6, 12, 10, 12));
         panel.getStyleClass().add("queue-panel");
         return panel;
     }

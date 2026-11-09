@@ -127,7 +127,7 @@ public final class FtpManagerApp extends Application {
         section.getStyleClass().add("header-section");
         HBox header = new HBox(34, brand, section);
         header.setAlignment(Pos.CENTER_LEFT);
-        header.setPadding(new Insets(22, 38, 22, 38));
+        header.setPadding(new Insets(10, 24, 10, 24));
         header.getStyleClass().add("top-bar");
         return header;
     }

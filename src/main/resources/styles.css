@@ -17,8 +17,8 @@
     -fx-font-size: 19px;
     -fx-font-weight: 900;
     -fx-alignment: center;
-    -fx-min-width: 39px;
-    -fx-min-height: 39px;
+    -fx-min-width: 34px;
+    -fx-min-height: 34px;
 }
 
 .brand-copy {
@@ -250,9 +250,9 @@
 
 .connection-title {
     -fx-text-fill: #e8eee7;
-    -fx-font-size: 15px;
+    -fx-font-size: 13px;
     -fx-font-weight: bold;
-    -fx-padding: 0 20 0 20;
+    -fx-padding: 0 14 0 14;
 }
 
 .connection-label {
@@ -271,7 +271,7 @@
 .connect-button, .disconnect-button {
     -fx-font-size: 11px;
     -fx-font-weight: bold;
-    -fx-padding: 10 14;
+    -fx-padding: 7 11;
     -fx-background-radius: 4;
     -fx-cursor: hand;
 }
@@ -326,7 +326,7 @@
     -fx-background-radius: 6;
     -fx-border-color: #dfe6de;
     -fx-border-radius: 6;
-    -fx-padding: 12;
+    -fx-padding: 9;
     -fx-min-width: 380px;
 }
 
@@ -374,7 +374,7 @@
 
 .file-table .table-cell {
     -fx-border-color: transparent transparent #edf0ec transparent;
-    -fx-padding: 8 7;
+    -fx-padding: 6 7;
     -fx-text-fill: #34443d;
     -fx-font-size: 11px;
 }
