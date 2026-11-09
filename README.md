@@ -49,6 +49,6 @@ The **File Transfer** interface provides local and remote file browsers, upload/
 
 No router port forwarding is needed for computers on the same LAN. If the second computer cannot connect, check that the Wi-Fi access point does not enable client isolation and that both computers are on the same subnet.
 
-Account data is stored in `~/.ftp-manager/ftp-manager.db`; each account's home directory is stored under `~/.ftp-manager/users/`.
+The live database is `~/ftp-manager-data/ftp-manager.db`, which can be opened directly in DB Browser for SQLite. On first server launch, existing accounts are copied from the old `~/.ftp-manager/ftp-manager.db` automatically. Account home folders remain under `~/.ftp-manager/users/`. Stop any older server process before launching the updated server so new accounts are written to the same database.
 
 The server uses plain FTP, which does not encrypt credentials or file contents. Keep it on a trusted local network for this learning project; do not expose it directly to the public internet.

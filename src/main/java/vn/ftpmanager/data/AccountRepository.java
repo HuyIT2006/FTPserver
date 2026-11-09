@@ -25,11 +25,27 @@ public final class AccountRepository {
     private final Path storagePath;
 
     public AccountRepository(Path applicationDirectory) throws SQLException, java.io.IOException {
+        this(applicationDirectory,
+                Path.of(System.getProperty("user.home"), ".ftp-manager", "ftp-manager.db"));
+    }
+
+    public AccountRepository(Path applicationDirectory, Path legacyDatabasePath)
+            throws SQLException, java.io.IOException {
+        this(applicationDirectory, legacyDatabasePath,
+            Path.of(System.getProperty("user.home"), ".ftp-manager", "users"));
+        }
+
+        public AccountRepository(Path applicationDirectory, Path legacyDatabasePath, Path storagePath)
+            throws SQLException, java.io.IOException {
         Files.createDirectories(applicationDirectory);
         databasePath = applicationDirectory.resolve("ftp-manager.db");
-        storagePath = applicationDirectory.resolve("users");
+        boolean databaseAlreadyExisted = Files.exists(databasePath);
+        this.storagePath = storagePath;
         Files.createDirectories(storagePath);
         initialize();
+        if (!databaseAlreadyExisted) {
+            migrateLegacyDatabase(legacyDatabasePath);
+        }
     }
 
     private Connection connect() throws SQLException {
@@ -49,6 +65,43 @@ public final class AccountRepository {
                         created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
                     )
                     """);
+        }
+    }
+
+    private void migrateLegacyDatabase(Path legacyDatabasePath) throws SQLException {
+        if (legacyDatabasePath.equals(databasePath) || !Files.isRegularFile(legacyDatabasePath)) {
+            return;
+        }
+        try (Connection legacy = DriverManager.getConnection("jdbc:sqlite:" + legacyDatabasePath);
+             var tableCheck = legacy.createStatement();
+             ResultSet table = tableCheck.executeQuery(
+                     "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'ftp_accounts'")) {
+            if (!table.next()) {
+                return;
+            }
+            try (PreparedStatement readAccounts = legacy.prepareStatement(
+                    "SELECT username, password_salt, password_hash, home_directory, enabled, created_at " +
+                            "FROM ftp_accounts");
+                 ResultSet accounts = readAccounts.executeQuery();
+                 Connection target = connect();
+                 PreparedStatement insertAccount = target.prepareStatement(
+                         "INSERT INTO ftp_accounts(username, password_salt, password_hash, home_directory, enabled, created_at) " +
+                                 "VALUES (?, ?, ?, ?, ?, ?)")) {
+                target.setAutoCommit(false);
+                try {
+                    while (accounts.next()) {
+                        for (int column = 1; column <= 6; column++) {
+                            insertAccount.setObject(column, accounts.getObject(column));
+                        }
+                        insertAccount.addBatch();
+                    }
+                    insertAccount.executeBatch();
+                    target.commit();
+                } catch (SQLException exception) {
+                    target.rollback();
+                    throw exception;
+                }
+            }
         }
     }
 

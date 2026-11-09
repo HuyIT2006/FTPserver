@@ -62,8 +62,10 @@ public final class FtpManagerApp extends Application {
         serverMode = mode.equals("server") || mode.equals("both");
         clientMode = mode.equals("client") || mode.equals("both");
         if (serverMode) {
-            Path appDirectory = Path.of(System.getProperty("user.home"), ".ftp-manager");
-            repository = new AccountRepository(appDirectory);
+            Path homeDirectory = Path.of(System.getProperty("user.home"));
+            Path appDirectory = homeDirectory.resolve("ftp-manager-data");
+            Path legacyDatabase = homeDirectory.resolve(".ftp-manager").resolve("ftp-manager.db");
+            repository = new AccountRepository(appDirectory, legacyDatabase);
         }
 
         BorderPane root = new BorderPane();
@@ -198,7 +200,8 @@ public final class FtpManagerApp extends Application {
 
         Label storageValue = new Label("SQLite");
         storageValue.getStyleClass().addAll("metric-value", "metric-word");
-        VBox storage = metric("ACCOUNT STORAGE", storageValue, new Label("Local database"));
+        VBox storage = metric("ACCOUNT STORAGE", storageValue,
+            new Label("~/ftp-manager-data/ftp-manager.db"));
 
         HBox metrics = new HBox(0, users, protocol, storage);
         metrics.getStyleClass().add("metrics-row");
