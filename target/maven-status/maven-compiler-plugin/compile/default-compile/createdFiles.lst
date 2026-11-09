@@ -1,0 +1,9 @@
+vn/ftpmanager/data/AccountRepository.class
+vn/ftpmanager/FileTransferView.class
+vn/ftpmanager/FileTransferView$TransferJob.class
+vn/ftpmanager/ftp/FtpClientService.class
+vn/ftpmanager/ftp/FtpServerService.class
+vn/ftpmanager/FtpManagerApp.class
+vn/ftpmanager/FileTransferView$LocalEntry.class
+vn/ftpmanager/data/FtpAccount.class
+vn/ftpmanager/ftp/DatabaseUserManager.class

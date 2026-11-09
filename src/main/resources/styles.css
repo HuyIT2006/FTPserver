@@ -57,7 +57,7 @@
 
 .page-title {
     -fx-text-fill: #1b302c;
-    -fx-font-size: 35px;
+    -fx-font-size: 24px;
     -fx-font-weight: bold;
 }
 
@@ -147,13 +147,13 @@
 }
 
 .metric {
-    -fx-padding: 17 22;
+    -fx-padding: 10 16;
     -fx-border-color: transparent #e9ede8 transparent transparent;
 }
 
 .metric-value {
     -fx-text-fill: #1b302c;
-    -fx-font-size: 25px;
+    -fx-font-size: 21px;
     -fx-font-weight: bold;
 }
 
@@ -170,7 +170,7 @@
 
 .panel-title {
     -fx-text-fill: #1b302c;
-    -fx-font-size: 17px;
+    -fx-font-size: 15px;
     -fx-font-weight: bold;
 }
 
@@ -192,7 +192,7 @@
 
 .accounts-table .table-cell {
     -fx-border-color: transparent transparent #edf0ec transparent;
-    -fx-padding: 12 8;
+    -fx-padding: 7 8;
     -fx-text-fill: #30413b;
     -fx-font-size: 12px;
 }
@@ -216,9 +216,9 @@
 
 .activity-message {
     -fx-text-fill: #30443a;
-    -fx-font-size: 13px;
-    -fx-wrap-text: true;
-    -fx-padding: 10 0 24 0;
+    -fx-font-size: 12px;
+    -fx-wrap-text: false;
+    -fx-padding: 0;
 }
 
 .workspace-tabs > .tab-header-area > .tab-header-background {

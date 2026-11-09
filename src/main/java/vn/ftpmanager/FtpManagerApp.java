@@ -17,7 +17,6 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -135,22 +134,19 @@ public final class FtpManagerApp extends Application {
     private VBox buildContent() {
         Label eyebrow = new Label("CONTROL ROOM  /  FTP SERVICE");
         eyebrow.getStyleClass().add("eyebrow");
-        Label title = new Label("Your files,\nyour server.");
+        Label title = new Label("FTP server administration");
         title.getStyleClass().add("page-title");
-        Label subtitle = new Label("Manage access and keep your file transfer service in view.");
+        Label subtitle = new Label("Manage accounts, storage access, and server status.");
         subtitle.getStyleClass().add("subtitle");
-        VBox intro = new VBox(10, eyebrow, title, subtitle);
+        VBox intro = new VBox(4, eyebrow, title, subtitle);
         intro.getStyleClass().add("intro");
 
         HBox statusCard = buildServerCard();
         HBox metrics = buildMetrics();
         VBox accounts = buildAccountsPanel();
-        VBox activity = buildActivityPanel();
-        HBox lower = new HBox(22, accounts, activity);
-        HBox.setHgrow(accounts, Priority.ALWAYS);
-        accounts.setMaxWidth(Double.MAX_VALUE);
-        VBox content = new VBox(22, intro, statusCard, metrics, lower);
-        content.setPadding(new Insets(34, 38, 38, 38));
+        HBox activity = buildActivityPanel();
+        VBox content = new VBox(12, intro, statusCard, metrics, accounts, activity);
+        content.setPadding(new Insets(18, 24, 20, 24));
         content.getStyleClass().add("main-content");
         return content;
     }
@@ -185,7 +181,7 @@ public final class FtpManagerApp extends Application {
         card.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(state, Priority.ALWAYS);
         card.getStyleClass().add("server-card");
-        card.setPadding(new Insets(22, 24, 22, 24));
+        card.setPadding(new Insets(12, 18, 12, 18));
         return card;
     }
 
@@ -213,7 +209,7 @@ public final class FtpManagerApp extends Application {
         Label label = new Label(labelText);
         label.getStyleClass().add("eyebrow");
         caption.getStyleClass().add("metric-caption");
-        VBox box = new VBox(8, label, value, caption);
+        VBox box = new VBox(5, label, value, caption);
         box.getStyleClass().add("metric");
         HBox.setHgrow(box, Priority.ALWAYS);
         return box;
@@ -235,7 +231,8 @@ public final class FtpManagerApp extends Application {
         accountTable.setPlaceholder(new Label("No accounts yet. Add one to allow FTP connections."));
         accountTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         TableColumn<FtpAccount, String> userColumn = new TableColumn<>("USERNAME");
-        userColumn.setCellValueFactory(new PropertyValueFactory<>("username"));
+        userColumn.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(
+            cell.getValue().username()));
         TableColumn<FtpAccount, String> folderColumn = new TableColumn<>("HOME FOLDER");
         folderColumn.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(
                 cell.getValue().homeDirectory().getFileName().toString()));
@@ -244,7 +241,8 @@ public final class FtpManagerApp extends Application {
                 cell.getValue().enabled() ? "Enabled" : "Disabled"));
         accountTable.getColumns().addAll(userColumn, folderColumn, accessColumn);
         accountTable.getStyleClass().add("accounts-table");
-        VBox.setVgrow(accountTable, Priority.ALWAYS);
+        accountTable.setMinHeight(95);
+        accountTable.setMaxHeight(280);
 
         Button deleteButton = new Button("Remove selected");
         deleteButton.getStyleClass().add("text-button");
@@ -252,27 +250,22 @@ public final class FtpManagerApp extends Application {
         HBox footer = new HBox(deleteButton);
         footer.setAlignment(Pos.CENTER_RIGHT);
 
-        VBox panel = new VBox(17, panelHeader, accountTable, footer);
+        VBox panel = new VBox(10, panelHeader, accountTable, footer);
         panel.getStyleClass().add("panel");
-        panel.setPadding(new Insets(22));
-        panel.setMinWidth(460);
+        panel.setPadding(new Insets(14));
         return panel;
     }
 
-    private VBox buildActivityPanel() {
-        Label title = new Label("Activity");
-        title.getStyleClass().add("panel-title");
-        Label caption = new Label("Latest local event");
-        caption.getStyleClass().add("panel-caption");
+    private HBox buildActivityPanel() {
+        Label title = new Label("LATEST ACTIVITY");
+        title.getStyleClass().add("eyebrow");
         activityText = new Label("Ready when you are.");
         activityText.getStyleClass().add("activity-message");
-        Label timestamp = new Label("SESSION LOG");
-        timestamp.getStyleClass().add("eyebrow");
-        VBox panel = new VBox(17, new VBox(5, title, caption), activityText, timestamp);
+        HBox panel = new HBox(12, title, activityText);
+        panel.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(activityText, Priority.ALWAYS);
         panel.getStyleClass().addAll("panel", "activity-panel");
-        panel.setPadding(new Insets(22));
-        panel.setMinWidth(215);
-        panel.setPrefWidth(245);
+        panel.setPadding(new Insets(9, 14, 9, 14));
         return panel;
     }
 
@@ -368,8 +361,11 @@ public final class FtpManagerApp extends Application {
 
     private void refreshAccounts() {
         try {
-            accountTable.setItems(FXCollections.observableArrayList(repository.findAll()));
-            accountCount.setText(Integer.toString(repository.count()));
+            List<FtpAccount> accounts = repository.findAll();
+            accountTable.setItems(FXCollections.observableArrayList(accounts));
+            accountCount.setText(Integer.toString(accounts.size()));
+            int visibleRows = Math.max(2, Math.min(7, accounts.size()));
+            accountTable.setPrefHeight(32 + visibleRows * 34);
         } catch (SQLException exception) {
             showError(exception);
         }
