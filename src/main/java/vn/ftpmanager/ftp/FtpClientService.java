@@ -20,6 +20,8 @@ public final class FtpClientService {
         newClient.setConnectTimeout(5000);
         newClient.setDataTimeout(15_000);
         newClient.setControlEncoding("UTF-8");
+        newClient.setUseEPSVwithIPv4(false);
+        newClient.enterLocalPassiveMode();
         newClient.connect(host, port);
         if (!FTPReply.isPositiveCompletion(newClient.getReplyCode())) {
             String reply = newClient.getReplyString();
@@ -31,7 +33,6 @@ public final class FtpClientService {
             newClient.disconnect();
             throw new IOException("FTP login failed: " + reply);
         }
-        newClient.enterLocalPassiveMode();
         newClient.setFileType(FTP.BINARY_FILE_TYPE);
         client = newClient;
         String workingDirectory = client.printWorkingDirectory();
